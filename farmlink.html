@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>FarmLink ZW</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+body{font-family:Arial;max-width:600px;margin:0 auto;padding:20px;background:#f5f5f5}
+h1{color:#2e7d32}
+input,textarea,button{width:100%;padding:10px;margin:5px 0;box-sizing:border-box}
+button{background:#2e7d32;color:white;border:none;cursor:pointer}
+.post{background:white;padding:15px;margin:10px 0;border-radius:8px}
+.sold{opacity:0.5;background:#eee}
+</style>
+</head>
+<body>
+<h1>FarmLink ZW</h1>
+<p style="color:#666;font-size:14px;margin-top:-10px;">Connect directly with buyers. No middlemen.</p>
+
+<h3>Post Your Crop</h3>
+<input id="farmer" placeholder="Farmer Name">
+<input id="crop" placeholder="Crop - e.g. Tomatoes">
+<input id="quantity" placeholder="Quantity - e.g. 20kg">
+<input id="price" placeholder="Price per kg - e.g. $1">
+<input id="phone" placeholder="WhatsApp Number - 26377...">
+<button onclick="postCrop()">Post</button>
+
+<h3>Available Now</h3>
+<div id="posts">Loading...</div>
+
+<script>
+// PASTE YOUR KEYS HERE ↓↓
+const SUPABASE_URL = 'PASTE_PROJECT_URL_HERE'
+const SUPABASE_KEY = 'PASTE_ANON_KEY_HERE'
+// ↑↑ PASTE YOUR KEYS HERE
+
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
+
+async function loadPosts() {
+  let { data } = await supabase.from('posts').select('*').order('created_at', {ascending:false})
+  let html = data.map(p => `
+    <div class="post ${p.status=='sold'?'sold':''}">
+      <b>${p.crop}</b> - ${p.quantity} @ ${p.price}/kg<br>
+      Farmer: ${p.farmer_name}<br>
+      <a href="https://wa.me/${p.phone}" target="_blank">WhatsApp: ${p.phone}</a><br>
+      ${p.status=='available'?`<button onclick="markSold(${p.id})">Mark SOLD</button>`:''}
+    </div>
+  `).join('')
+  document.getElementById('posts').innerHTML = html || 'No posts yet'
+}
+
+async function postCrop() {
+  await supabase.from('posts').insert([{
+    farmer_name: farmer.value,
+    crop: crop.value,
+    quantity: quantity.value,
+    price: price.value,
+    phone: phone.value
+  }])
+  farmer.value=crop.value=quantity.value=price.value=phone.value=''
+  loadPosts()
+}
+
+async function markSold(id) {
+  await supabase.from('posts').update({status:'sold'}).eq('id',id)
+  loadPosts()
+}
+
+loadPosts()
+</script>
+</body>
+<a/html>
